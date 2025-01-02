@@ -10,15 +10,6 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
-  server: {
-    proxy: mode === 'development' ? { // Enable proxy only in development
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    } : undefined,
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

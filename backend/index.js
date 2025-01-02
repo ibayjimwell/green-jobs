@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const sqlite3 = require('sqlite3');
 const multer = require('multer');
 
@@ -6,7 +7,12 @@ const app = express();
 const db = new sqlite3.Database('./jobs.db');
 
 // MIDDLEWARE
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 const upload = multer();
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
+  });
 
 // INITIALIZE DATABASE
 db.serialize(() => {
@@ -55,29 +61,43 @@ app.get('/api/jobs/:id', (req, res) => {
 });
 
 app.post('/api/jobs/add', upload.none(), (req, res) => {
-    const {title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
-    const queary = 'INSERT INTO jobs (title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
-    db.run(queary, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone], (err) => {
+    const { title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
+    const query = `
+        INSERT INTO jobs (title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    db.run(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone], function (err) {
         if (err) {
-            res.status(500).json({ error: err.message, isSucess: false });
+            res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        res.json({ message: 'Job added successfully', isSucess: true });
+        res.json({ id: this.lastID, isSuccess: true }); // Use `this.lastID` for the last inserted row ID
     });
 });
 
 app.put('/api/jobs/edit/:id', upload.none(), (req, res) => {
     const id = req.params.id;
-    const {title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
-    const queary = 'UPDATE jobs SET title = ?, type = ?, description = ?, location = ?, salary = ?, company_name = ?, company_description = ?, company_contact_email = ?, company_contact_phone = ? WHERE id = ?';
-    db.run(queary, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone, id], (err) => {
+    const { title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
+    const query = `
+        UPDATE jobs
+        SET title = ?, type = ?, description = ?, location = ?, salary = ?, company_name = ?, company_description = ?, company_contact_email = ?, company_contact_phone = ?
+        WHERE id = ?
+    `;
+    db.run(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone, id], function (err) {
         if (err) {
-            res.status(500).json({ error: err.message, isSucess: false });
+            res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        res.json({ message: 'Job updated successfully', isSucess: true });
+
+        // Use `this.changes` to verify if any rows were updated
+        if (this.changes === 0) {
+            res.status(404).json({ message: 'Job not found', isSuccess: false });
+        } else {
+            res.json({ id: id, isSuccess: true });
+        }
     });
 });
+
 
 app.delete('/api/jobs/delete/:id', (req, res) => {
     const id = req.params.id;

@@ -111,6 +111,7 @@ app.delete('/api/jobs/delete/:id', (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log(`Server running at http://localhost:3000`);
+const PORT = process.env.PORT || 3000; // Use PORT environment variable
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
 });

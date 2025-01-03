@@ -1,80 +1,75 @@
 const express = require('express');
 const path = require('path');
-const sqlite3 = require('sqlite3');
+const mysql = require('mysql2');
+const cors = require('cors');
 const multer = require('multer');
+require('dotenv').config();
 
 const app = express();
-const db = new sqlite3.Database('./jobs.db');
-
-// MIDDLEWARE
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
 const upload = multer();
 
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
-  });
-
-// INITIALIZE DATABASE
-db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS jobs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title varchar(255) NOT NULL,
-            type varchar(255) NOT NULL,
-            description TEXT NOT NULL,
-            location varchar(255) NOT NULL,
-            salary varchar(255) NOT NULL,
-            company_name varchar(255) NOT NULL,
-            company_description TEXT NOT NULL,
-            company_contact_email varchar(255) NOT NULL,
-            company_contact_phone varchar(255) NOT NULL
-        )
-        `);
+// MySQL Database Connection
+const db = mysql.createPool({
+    host: 'localhost', // e.g., 'localhost'
+    user: 'root', // e.g., 'root'
+    database: 'db_green_jobs' // e.g., 'jobs_db'
 });
 
-// ROUTES (CRUD)
+// Middleware
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.use(express.json()); // Parse JSON requests
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded requests
+app.use(cors()); // Enable CORS
+
+
+// Routes (CRUD)
+
+// Get all jobs
 app.get('/api/jobs', (req, res) => {
-    const queary = 'SELECT * FROM jobs';
-    db.all(queary, [], (err, rows) => {
+    const query = 'SELECT * FROM jobs';
+    db.query(query, (err, results) => {
         if (err) {
-            res.status(500).json({ error: err.message, isSucess: false });
+            res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        res.json(rows);
-    })
+        res.json(results);
+    });
 });
 
+// Get job by ID
 app.get('/api/jobs/:id', (req, res) => {
     const id = req.params.id;
-    const queary = 'SELECT * FROM jobs WHERE id = ?';
-    db.get(queary, [id], (err, row) => {
+    const query = 'SELECT * FROM jobs WHERE id = ?';
+    db.query(query, [id], (err, results) => {
         if (err) {
-            res.status(500).json({ error: err.message, isSucess: false });
+            res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        if (row) {
-            res.json(row);
+        if (results.length > 0) {
+            res.json(results[0]);
         } else {
-            res.status(404).json({ error: 'Job not found', isSucess: false });
+            res.status(404).json({ error: 'Job not found', isSuccess: false });
         }
     });
 });
 
+// Add a new job
 app.post('/api/jobs/add', upload.none(), (req, res) => {
     const { title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
     const query = `
         INSERT INTO jobs (title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    db.run(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone], function (err) {
+    db.query(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone], (err, results) => {
         if (err) {
             res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        res.json({ id: this.lastID, isSuccess: true }); // Use `this.lastID` for the last inserted row ID
+        res.json({ id: results.insertId, isSuccess: true });
     });
 });
 
+// Edit a job
 app.put('/api/jobs/edit/:id', upload.none(), (req, res) => {
     const id = req.params.id;
     const { title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone } = req.body;
@@ -83,14 +78,12 @@ app.put('/api/jobs/edit/:id', upload.none(), (req, res) => {
         SET title = ?, type = ?, description = ?, location = ?, salary = ?, company_name = ?, company_description = ?, company_contact_email = ?, company_contact_phone = ?
         WHERE id = ?
     `;
-    db.run(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone, id], function (err) {
+    db.query(query, [title, type, description, location, salary, company_name, company_description, company_contact_email, company_contact_phone, id], (err, results) => {
         if (err) {
             res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-
-        // Use `this.changes` to verify if any rows were updated
-        if (this.changes === 0) {
+        if (results.affectedRows === 0) {
             res.status(404).json({ message: 'Job not found', isSuccess: false });
         } else {
             res.json({ id: id, isSuccess: true });
@@ -98,20 +91,28 @@ app.put('/api/jobs/edit/:id', upload.none(), (req, res) => {
     });
 });
 
-
+// Delete a job
 app.delete('/api/jobs/delete/:id', (req, res) => {
     const id = req.params.id;
-    const queary = 'DELETE FROM jobs WHERE id = ?';
-    db.run(queary, [id], (err) => {
+    const query = 'DELETE FROM jobs WHERE id = ?';
+    db.query(query, [id], (err, results) => {
         if (err) {
-            res.status(500).json({ error: err.message, isSucess: false });
+            res.status(500).json({ error: err.message, isSuccess: false });
             return;
         }
-        res.json({ message: 'Job deleted successfully', isSucess: true });
+        if (results.affectedRows === 0) {
+            res.status(404).json({ message: 'Job not found', isSuccess: false });
+        } else {
+            res.json({ message: 'Job deleted successfully', isSuccess: true });
+        }
     });
 });
 
-const PORT = process.env.PORT || 3000; // Use PORT environment variable
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
+});
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend/dist", "index.html"));
 });

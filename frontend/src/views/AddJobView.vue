@@ -215,7 +215,7 @@
                 formData.append('company_contact_phone', this.form.company_contact_phone);
 
                 try {
-                    const response = await axios.post(`/api/jobs/add`, formData, {
+                    const response = await axios.post(`http://localhost:3000/api/jobs/add`, formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data'
                         }

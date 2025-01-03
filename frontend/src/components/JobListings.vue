@@ -51,7 +51,7 @@
         methods: {
             async fetchJobs() {
                 try {
-                    const response = await axios.get('/api/jobs');
+                    const response = await axios.get('http://localhost:3000/api/jobs');
                     this.state.jobs = response.data;
                 } catch (error) {
                     console.error(error);

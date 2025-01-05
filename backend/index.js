@@ -12,8 +12,9 @@ const upload = multer();
 const db = mysql.createPool({
     host: process.env.DB_HOST, // e.g., 'localhost'
     user: process.env.DB_USER, // e.g., 'root'
-    database: process.env.DB_DATABASE, // e.g., 'jobs_db',
-    password: process.env.DB_PASSWORD // e.g., 'jobs_db'
+    database: process.env.DB_NAME, // e.g., 'jobs_db',
+    password: process.env.DB_PASSWORD, // e.g., 'jobs_db'
+    port: process.env.DB_PORT
 });
 
 // Middleware
@@ -22,6 +23,27 @@ app.use(express.json()); // Parse JSON requests
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded requests
 app.use(cors()); // Enable CORS
 
+// Create jobs table if it doesn't exist
+const createJobsTableQuery = `
+    CREATE TABLE IF NOT EXISTS jobs (
+        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        type VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        salary VARCHAR(255) NOT NULL,
+        company_name VARCHAR(255) NOT NULL,
+        company_description TEXT NOT NULL,
+        company_contact_email VARCHAR(255) NOT NULL,
+        company_contact_phone VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+`;
+db.query(createJobsTableQuery, (err, results) => {
+    if (err) {
+        console.error(err);
+    }
+});
 
 // Routes (CRUD)
 

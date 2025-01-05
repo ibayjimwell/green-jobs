@@ -10,9 +10,10 @@ const upload = multer();
 
 // MySQL Database Connection
 const db = mysql.createPool({
-    host: 'localhost', // e.g., 'localhost'
-    user: 'root', // e.g., 'root'
-    database: 'db_green_jobs' // e.g., 'jobs_db'
+    host: process.env.DB_HOST, // e.g., 'localhost'
+    user: process.env.DB_USER, // e.g., 'root'
+    database: process.env.DB_DATABASE, // e.g., 'jobs_db',
+    password: process.env.DB_PASSWORD // e.g., 'jobs_db'
 });
 
 // Middleware

@@ -114,7 +114,7 @@
                 try {
                     const confirm = window.confirm('Are you sure you want to delete this job?');
                     if (confirm) {
-                        await axios.delete(`/api/jobs/delete/${this.jobId}`);
+                        await axios.delete(`https://greenjobs.vercel.app/api/jobs/delete/${this.jobId}`);
                         this.toast.success('Job Deleted Successfully');
                         this.router.push('/jobs');
                     }
@@ -124,7 +124,7 @@
             },
             async fetchJob() {
                 try {
-                    const response = await axios.get(`/api/jobs/${this.jobId}`);
+                    const response = await axios.get(`https://greenjobs.vercel.app/api/jobs/${this.jobId}`);
                     this.state.job = response.data;
                 } catch (error) {
                     console.error(error);

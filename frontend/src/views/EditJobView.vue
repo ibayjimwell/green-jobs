@@ -223,7 +223,7 @@
                 formData.append('company_contact_phone', this.form.company_contact_phone);
 
                 try {
-                    const response = await axios.put(`http://localhost:3000/api/jobs/edit/${this.jobId}`, formData, {
+                    const response = await axios.put(`https://greenjobs.vercel.app/api/jobs/edit/${this.jobId}`, formData, {
                         headers: {
                             'Content-Type': 'multipart/form-data'
                         }

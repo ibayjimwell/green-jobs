@@ -8,5 +8,6 @@
       { "src": "/api/(.*)", "dest": "backend/index.js" },
       { "src": "/(.*)", "dest": "frontend/dist/$1" }
     ]
-}
+  }
+  
   

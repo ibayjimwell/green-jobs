@@ -11,9 +11,7 @@ node_modules
 fontend/node_modules
 backend/node_modules
 .DS_Store
-dist
 .vscode
-dist-ssr
 coverage
 *.local
 
